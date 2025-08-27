@@ -273,6 +273,7 @@ $("add-cat").addEventListener("click", () => {
   }
 });
 
+
 // Inicialização
 document.querySelectorAll('input[type="date"]').forEach(i=>{ i.value = new Date().toISOString().slice(0,10); });
 
