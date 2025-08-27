@@ -20,7 +20,7 @@
     .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     table{width:100%;border-collapse:collapse;color:#e6eef8}
     th,td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
-    .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#1f6feb;color:white;text-decoration:none;cursor:pointer;margin-top:8px}
+    .btn{display:inline-block;padding:4px 8px;border-radius:6px;background:#1f6feb;color:white;text-decoration:none;cursor:pointer;margin:2px;font-size:12px}
     .small{font-size:12px;color:#9fb6d8}
     .stats{display:flex;gap:8px;flex-wrap:wrap}
     .stat{background:#09293f;padding:8px;border-radius:8px;min-width:120px;text-align:center}
@@ -37,6 +37,7 @@
     <div class="tabs">
       <div class="tab active" id="tab-fin">Financeiro</div>
       <div class="tab" id="tab-cor">Corridas</div>
+      <div class="tab" id="tab-cat">Categorias</div>
     </div>
 
     <!-- Financeiro -->
@@ -53,6 +54,8 @@
           <div>
             <label>Categoria</label>
             <select id="f-cat"></select>
+            <label>Subcategoria</label>
+            <select id="f-sub"></select>
             <label>Tipo</label>
             <select id="f-type">
               <option value="Entrada">Entrada</option>
@@ -136,6 +139,18 @@
             <h3 class="small">Gastos x Lucro</h3>
             <canvas id="cor-pie"></canvas>
           </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Categorias -->
+    <section id="cat" style="display:none">
+      <div class="card">
+        <h2>Gerenciar Categorias</h2>
+        <div id="cat-list"></div>
+        <div style="margin-top:8px">
+          <input id="new-cat" type="text" placeholder="Nova categoria"/>
+          <button class="btn" id="add-cat">Adicionar Categoria</button>
         </div>
       </div>
     </section>
