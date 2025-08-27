@@ -197,31 +197,80 @@ $("import-json").addEventListener("change",(e)=>{
 
 // Gerenciar categorias
 function renderCatList(){
-  const list=$("cat-list"); list.innerHTML="";
-  cats.forEach((c,ci)=>{
-    const div=document.createElement("div"); div.style.margin="8px 0"; div.innerHTML=`<b>${c.name}</b> <button data-delc="${ci}" class="btn" style="background:#ef4444">Excluir</button>`;
-    const subsDiv=document.createElement("div"); subsDiv.style.marginLeft="12px";
-    c.subs.forEach((s,si)=>{
-      const span=document.createElement("div");
-      span.innerHTML=`- ${s} <button data-dels="${ci}-${si}" class="btn" style="background:#ef4444">x</button>`;
+  const list = $("cat-list");
+  list.innerHTML = "";
+
+  cats.forEach((c, ci) => {
+    const div = document.createElement("div");
+    div.style.margin = "8px 0";
+    div.innerHTML = `<b>${c.name}</b> <button data-delc="${ci}" class="btn" style="background:#ef4444">Excluir</button>`;
+
+    // Subcategorias
+    const subsDiv = document.createElement("div");
+    subsDiv.style.marginLeft = "12px";
+    c.subs.forEach((s, si) => {
+      const span = document.createElement("div");
+      span.innerHTML = `- ${s} <button data-dels="${ci}-${si}" class="btn" style="background:#ef4444">x</button>`;
       subsDiv.appendChild(span);
     });
-    const inp=document.createElement("input"); inp.placeholder="Nova subcategoria"; inp.style.marginRight="4px";
-    const btn=document.createElement("button"); btn.textContent="Adicionar Sub"; btn.className="btn";
-    btn.addEventListener("click",()=>{ if(inp.value){ c.subs.push(inp.value); inp.value=""; save(); fillSubs(); renderCatList(); } });
-    subsDiv.appendChild(inp); subsDiv.appendChild(btn);
+
+    // Campo + botão para adicionar subcategoria
+    const inp = document.createElement("input");
+    inp.placeholder = "Nova subcategoria";
+    inp.style.marginRight = "4px";
+
+    const btn = document.createElement("button");
+    btn.textContent = "Adicionar Sub";
+    btn.className = "btn";
+    btn.addEventListener("click", () => {
+      if (inp.value.trim()) {
+        c.subs.push(inp.value.trim());
+        inp.value = "";
+        save();
+        fillCats();     // Atualiza selects
+        renderCatList();// Atualiza lista
+      }
+    });
+
+    subsDiv.appendChild(inp);
+    subsDiv.appendChild(btn);
     div.appendChild(subsDiv);
     list.appendChild(div);
   });
-  list.querySelectorAll("button[data-delc]").forEach(b=>b.addEventListener("click",e=>{
-    const i=Number(e.target.dataset.delc); cats.splice(i,1); save(); fillCats(); renderCatList();
-  }));
-  list.querySelectorAll("button[data-dels]").forEach(b=>b.addEventListener("click",e=>{
-    const [ci,si]=e.target.dataset.dels.split("-").map(Number); cats[ci].subs.splice(si,1); save(); fillSubs(); renderCatList();
-  }));
+
+  // Excluir categoria
+  list.querySelectorAll("button[data-delc]").forEach(b =>
+    b.addEventListener("click", e => {
+      const i = Number(e.target.dataset.delc);
+      cats.splice(i, 1);
+      save();
+      fillCats();
+      renderCatList();
+    })
+  );
+
+  // Excluir subcategoria
+  list.querySelectorAll("button[data-dels]").forEach(b =>
+    b.addEventListener("click", e => {
+      const [ci, si] = e.target.dataset.dels.split("-").map(Number);
+      cats[ci].subs.splice(si, 1);
+      save();
+      fillCats();
+      renderCatList();
+    })
+  );
 }
-$("add-cat").addEventListener("click",()=>{
-  const name=$("new-cat").value.trim(); if(name){ cats.push({name,subs:[]}); $("new-cat").value=""; save(); fillCats(); renderCatList(); }
+
+// Adicionar categoria
+$("add-cat").addEventListener("click", () => {
+  const name = $("new-cat").value.trim();
+  if (name) {
+    cats.push({ name, subs: [] });
+    $("new-cat").value = "";
+    save();
+    fillCats();
+    renderCatList();
+  }
 });
 
 // Inicialização
