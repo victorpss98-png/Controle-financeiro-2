@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controle Financeiro & Corridas</title>
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0f172a"/>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;background:#0f172a;color:#e6eef8;margin:0;padding:0}
+    header{background:#081027;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+    h1{font-size:18px;margin:0}
+    main{padding:16px;max-width:900px;margin:0 auto}
+    .tabs{display:flex;gap:8px;margin-bottom:12px}
+    .tab{padding:8px 12px;background:#06203a;border-radius:8px;cursor:pointer}
+    .tab.active{background:#1f6feb}
+    .card{background:#072032;padding:12px;border-radius:8px;margin-bottom:12px}
+    label{display:block;font-size:13px;margin-top:8px;color:#cfe6ff}
+    input,select{width:100%;padding:8px;border-radius:6px;border:1px solid #114;box-sizing:border-box;background:#06273b;color:#e6eef8}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    table{width:100%;border-collapse:collapse;color:#e6eef8}
+    th,td{padding:6px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:13px}
+    .btn{display:inline-block;padding:8px 12px;border-radius:8px;background:#1f6feb;color:white;text-decoration:none;cursor:pointer;margin-top:8px}
+    .small{font-size:12px;color:#9fb6d8}
+    .stats{display:flex;gap:8px;flex-wrap:wrap}
+    .stat{background:#09293f;padding:8px;border-radius:8px;min-width:120px;text-align:center}
+    canvas{max-width:100%}
+    footer{padding:12px;text-align:center;color:#9fb6d8;font-size:12px}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Controle Financeiro & Corridas</h1>
+    <div class="small">PWA - Local</div>
+  </header>
+  <main>
+    <div class="tabs">
+      <div class="tab active" id="tab-fin">Financeiro</div>
+      <div class="tab" id="tab-cor">Corridas</div>
+    </div>
+
+    <!-- Financeiro -->
+    <section id="fin" class="visible">
+      <div class="card">
+        <h2>Novo lançamento</h2>
+        <div class="grid">
+          <div>
+            <label>Data</label>
+            <input id="f-date" type="date" />
+            <label>Descrição</label>
+            <input id="f-desc" type="text" placeholder="Ex: Mercado, Pix, Salário..." />
+          </div>
+          <div>
+            <label>Categoria</label>
+            <select id="f-cat"></select>
+            <label>Tipo</label>
+            <select id="f-type">
+              <option value="Entrada">Entrada</option>
+              <option value="Saída">Saída</option>
+            </select>
+          </div>
+        </div>
+        <label>Valor (R$)</label>
+        <input id="f-val" type="number" step="0.01" placeholder="0.00" />
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <button class="btn" id="add-fin">Adicionar</button>
+          <button class="btn" id="export-json" style="background:#0b8f5f">Backup</button>
+          <input type="file" id="import-json" style="display:none"/>
+          <button class="btn" id="import-btn" style="background:#f59e0b">Restaurar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Resumo</h2>
+        <div class="stats" id="fin-stats">
+          <div class="stat"><div class="small">Entradas</div><div id="total-entr">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Saídas</div><div id="total-sai">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Saldo</div><div id="total-saldo">R$ 0,00</div></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:260px">
+            <h3 class="small">Lançamentos</h3>
+            <div id="fin-table" style="max-height:260px;overflow:auto"></div>
+          </div>
+          <div style="width:300px">
+            <h3 class="small">Gastos por categoria</h3>
+            <canvas id="fin-pie"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Corridas -->
+    <section id="cor" style="display:none">
+      <div class="card">
+        <h2>Novo registro (resumo diário)</h2>
+        <div class="grid">
+          <div>
+            <label>Data</label>
+            <input id="c-date" type="date" />
+            <label>Quilometragem (km)</label>
+            <input id="c-km" type="number" step="0.1" />
+            <label>App usado</label>
+            <input id="c-app" type="text" placeholder="Ex: iFood, Rappi..." />
+          </div>
+          <div>
+            <label>Ganhos do dia (R$)</label>
+            <input id="c-gan" type="number" step="0.01" />
+            <label>Combustível (R$)</label>
+            <input id="c-comb" type="number" step="0.01" />
+            <label>Outros gastos (R$)</label>
+            <input id="c-outros" type="number" step="0.01" />
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <button class="btn" id="add-cor">Adicionar</button>
+          <button class="btn" id="export-json-cor" style="background:#0b8f5f">Backup</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Resumo corridas</h2>
+        <div class="stats" id="cor-stats">
+          <div class="stat"><div class="small">Ganhos</div><div id="g-total">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Combustível</div><div id="g-comb">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Outros</div><div id="g-outros">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Lucro líquido</div><div id="g-lucro">R$ 0,00</div></div>
+          <div class="stat"><div class="small">Km total</div><div id="g-km">0</div></div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:260px">
+            <h3 class="small">Registros</h3>
+            <div id="cor-table" style="max-height:260px;overflow:auto"></div>
+          </div>
+          <div style="width:300px">
+            <h3 class="small">Gastos x Lucro</h3>
+            <canvas id="cor-pie"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>Dados salvos localmente no dispositivo. Use Backup para exportar um arquivo JSON.</footer>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
