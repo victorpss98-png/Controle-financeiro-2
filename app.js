@@ -1,10 +1,18 @@
-
 /* App logic: storage, calculations, charts */
 const LS_FIN = "pwa_fin_rows_v1";
 const LS_COR = "pwa_cor_rows_v1";
-const LS_CAT = "pwa_fin_cats_v1";
+const LS_CAT = "pwa_fin_cats_v2";
 
-const DEFAULT_CATS = ["Alimentação","Moradia","Transporte","Lazer","Contas","Saúde","Educação","Outros"];
+const DEFAULT_CATS = [
+  { name: "Alimentação", subs: [] },
+  { name: "Moradia", subs: [] },
+  { name: "Transporte", subs: [] },
+  { name: "Lazer", subs: [] },
+  { name: "Contas", subs: [] },
+  { name: "Saúde", subs: [] },
+  { name: "Educação", subs: [] },
+  { name: "Outros", subs: [] }
+];
 
 let fin = JSON.parse(localStorage.getItem(LS_FIN)||"[]");
 let cor = JSON.parse(localStorage.getItem(LS_COR)||"[]");
@@ -13,23 +21,47 @@ let cats = JSON.parse(localStorage.getItem(LS_CAT)||"null") || DEFAULT_CATS;
 function $(id){return document.getElementById(id);}
 function fmt(n){return "R$ "+Number(n||0).toFixed(2).replace(".",",");}
 
-function save(){ localStorage.setItem(LS_FIN, JSON.stringify(fin)); localStorage.setItem(LS_COR, JSON.stringify(cor)); localStorage.setItem(LS_CAT, JSON.stringify(cats)); }
+function save(){
+  localStorage.setItem(LS_FIN, JSON.stringify(fin));
+  localStorage.setItem(LS_COR, JSON.stringify(cor));
+  localStorage.setItem(LS_CAT, JSON.stringify(cats));
+}
 
-document.getElementById("tab-fin").addEventListener("click",()=>{showTab("fin")});
-document.getElementById("tab-cor").addEventListener("click",()=>{showTab("cor")});
+// Navegação
+document.getElementById("tab-fin").addEventListener("click",()=>showTab("fin"));
+document.getElementById("tab-cor").addEventListener("click",()=>showTab("cor"));
+document.getElementById("tab-cat").addEventListener("click",()=>showTab("cat"));
+
 function showTab(id){
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
   document.getElementById("tab-"+id).classList.add("active");
-  document.getElementById("fin").style.display = id==="fin" ? "block" : "none";
-  document.getElementById("cor").style.display = id==="cor" ? "block" : "none";
+  ["fin","cor","cat"].forEach(sec=>{
+    document.getElementById(sec).style.display = (sec===id) ? "block" : "none";
+  });
 }
 
+// Preencher selects
 function fillCats(){
   const sel = $("f-cat"); sel.innerHTML = "";
-  cats.forEach(c=>{ const o=document.createElement("option"); o.value=c; o.textContent=c; sel.appendChild(o); });
+  cats.forEach(c=>{
+    const o=document.createElement("option"); o.value=c.name; o.textContent=c.name; sel.appendChild(o);
+  });
+  fillSubs();
 }
+function fillSubs(){
+  const sel = $("f-sub"); sel.innerHTML="";
+  const catName=$("f-cat").value;
+  const cat=cats.find(c=>c.name===catName);
+  if(cat && cat.subs.length){
+    cat.subs.forEach(s=>{ const o=document.createElement("option"); o.value=s; o.textContent=s; sel.appendChild(o); });
+  } else {
+    const o=document.createElement("option"); o.value=""; o.textContent=""; sel.appendChild(o);
+  }
+}
+$("f-cat").addEventListener("change",fillSubs);
 fillCats();
 
+// Gráficos
 let finPie=null, corPie=null;
 function drawFinPie(data){
   const ctx = $("fin-pie").getContext("2d");
@@ -42,6 +74,7 @@ function drawCorPie(data){
   corPie = new Chart(ctx, {type:"pie", data:{labels:data.map(d=>d.label), datasets:[{data:data.map(d=>d.value)}]}, options:{responsive:true}});
 }
 
+// Render Financeiro
 function renderFin(){
   const entradas = fin.filter(r=>r.type==="Entrada").reduce((a,b)=>a+Number(b.value),0);
   const saidas = fin.filter(r=>r.type==="Saída").reduce((a,b)=>a+Number(b.value),0);
@@ -53,12 +86,12 @@ function renderFin(){
   if(fin.length===0){ container.innerHTML="<div class='small'>Sem lançamentos.</div>"; } else {
     const table = document.createElement("table");
     const thead = document.createElement("thead");
-    thead.innerHTML = "<tr><th>Data</th><th>Desc</th><th>Cat</th><th>Tipo</th><th>Valor</th><th></th></tr>";
+    thead.innerHTML = "<tr><th>Data</th><th>Desc</th><th>Cat</th><th>Sub</th><th>Tipo</th><th>Valor</th><th></th></tr>";
     table.appendChild(thead);
     const tbody = document.createElement("tbody");
     fin.forEach((r,idx)=>{
       const tr=document.createElement("tr");
-      tr.innerHTML = `<td>${r.date}</td><td>${r.desc||""}</td><td>${r.cat}</td><td>${r.type}</td><td>${fmt(r.value)}</td><td><button data-i="${idx}" class="btn" style="background:#ef4444">Excluir</button></td>`;
+      tr.innerHTML = `<td>${r.date}</td><td>${r.desc||""}</td><td>${r.cat}</td><td>${r.sub||""}</td><td>${r.type}</td><td>${fmt(r.value)}</td><td><button data-i="${idx}" class="btn" style="background:#ef4444">Excluir</button></td>`;
       tbody.appendChild(tr);
     });
     table.appendChild(tbody); container.appendChild(table);
@@ -76,6 +109,7 @@ function renderFinChart(){
   if(data.length===0) drawFinPie([{label:"Sem gastos",value:1}]); else drawFinPie(data);
 }
 
+// Corridas
 function renderCor(){
   const ganhos = cor.reduce((a,b)=>a+Number(b.ganhos),0);
   const combust = cor.reduce((a,b)=>a+Number(b.combustivel),0);
@@ -114,20 +148,27 @@ function renderCorChart(){
   const combust = cor.reduce((a,b)=>a+Number(b.combustivel),0);
   const outros = cor.reduce((a,b)=>a+Number(b.outros),0);
   const lucro = Math.max(ganhos - combust - outros,0);
-  const data = [{label:"Combustível",value:combust},{label:"Outros Gastos",value:outros},{label:"Lucro",value:Math.round(lucro*100)/100}];
+  const data = [
+    {label:"Combustível",value:combust},
+    {label:"Outros Gastos",value:outros},
+    {label:"Lucro",value:Math.round(lucro*100)/100}
+  ];
   drawCorPie(data);
 }
 
+// Adicionar financeiro
 $("add-fin").addEventListener("click",()=>{
   const date=$("f-date").value || new Date().toISOString().slice(0,10);
   const desc=$("f-desc").value;
   const cat=$("f-cat").value || "Outros";
+  const sub=$("f-sub").value || "";
   const type=$("f-type").value;
   const value=Number($("f-val").value)||0;
-  fin.unshift({date,desc,cat,type,value}); save(); renderFin();
+  fin.unshift({date,desc,cat,sub,type,value}); save(); renderFin();
   $("f-desc").value=""; $("f-val").value="";
 });
 
+// Adicionar corrida
 $("add-cor").addEventListener("click",()=>{
   const date=$("c-date").value || new Date().toISOString().slice(0,10);
   const km=Number($("c-km").value)||0;
@@ -139,6 +180,7 @@ $("add-cor").addEventListener("click",()=>{
   $("c-km").value=""; $("c-app").value=""; $("c-gan").value=""; $("c-comb").value=""; $("c-outros").value="";
 });
 
+// Backup e restauração
 $("export-json").addEventListener("click",()=>{
   const blob=new Blob([JSON.stringify({fin,cor,cats},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`backup_controle_${new Date().toISOString().slice(0,10)}.json`; a.click(); URL.revokeObjectURL(url);
@@ -147,12 +189,42 @@ $("export-json-cor").addEventListener("click",()=> $("export-json").click() );
 $("import-btn").addEventListener("click",()=> $("import-json").click() );
 $("import-json").addEventListener("change",(e)=>{
   const f=e.target.files[0]; if(!f) return;
-  const r=new FileReader(); r.onload=()=>{ try{ const data=JSON.parse(r.result); if(Array.isArray(data.fin)) fin=data.fin; if(Array.isArray(data.cor)) cor=data.cor; if(Array.isArray(data.cats)) cats=data.cats; save(); fillCats(); renderFin(); renderCor(); alert("Restaurado!"); }catch(err){alert("Arquivo inválido");} }; r.readAsText(f);
+  const r=new FileReader(); r.onload=()=>{ try{ const data=JSON.parse(r.result); if(Array.isArray(data.fin)) fin=data.fin; if(Array.isArray(data.cor)) cor=data.cor; if(Array.isArray(data.cats)) cats=data.cats; save(); fillCats(); renderFin(); renderCor(); renderCatList(); alert("Restaurado!"); }catch(err){alert("Arquivo inválido");} }; r.readAsText(f);
 });
 
+// Gerenciar categorias
+function renderCatList(){
+  const list=$("cat-list"); list.innerHTML="";
+  cats.forEach((c,ci)=>{
+    const div=document.createElement("div"); div.style.margin="8px 0"; div.innerHTML=`<b>${c.name}</b> <button data-delc="${ci}" class="btn" style="background:#ef4444">Excluir</button>`;
+    const subsDiv=document.createElement("div"); subsDiv.style.marginLeft="12px";
+    c.subs.forEach((s,si)=>{
+      const span=document.createElement("div");
+      span.innerHTML=`- ${s} <button data-dels="${ci}-${si}" class="btn" style="background:#ef4444">x</button>`;
+      subsDiv.appendChild(span);
+    });
+    const inp=document.createElement("input"); inp.placeholder="Nova subcategoria"; inp.style.marginRight="4px";
+    const btn=document.createElement("button"); btn.textContent="Adicionar Sub"; btn.className="btn";
+    btn.addEventListener("click",()=>{ if(inp.value){ c.subs.push(inp.value); inp.value=""; save(); fillSubs(); renderCatList(); } });
+    subsDiv.appendChild(inp); subsDiv.appendChild(btn);
+    div.appendChild(subsDiv);
+    list.appendChild(div);
+  });
+  list.querySelectorAll("button[data-delc]").forEach(b=>b.addEventListener("click",e=>{
+    const i=Number(e.target.dataset.delc); cats.splice(i,1); save(); fillCats(); renderCatList();
+  }));
+  list.querySelectorAll("button[data-dels]").forEach(b=>b.addEventListener("click",e=>{
+    const [ci,si]=e.target.dataset.dels.split("-").map(Number); cats[ci].subs.splice(si,1); save(); fillSubs(); renderCatList();
+  }));
+}
+$("add-cat").addEventListener("click",()=>{
+  const name=$("new-cat").value.trim(); if(name){ cats.push({name,subs:[]}); $("new-cat").value=""; save(); fillCats(); renderCatList(); }
+});
+
+// Inicialização
 document.querySelectorAll('input[type="date"]').forEach(i=>{ i.value = new Date().toISOString().slice(0,10); });
 
-renderFin(); renderCor(); renderFinChart(); renderCorChart();
+renderFin(); renderCor(); renderFinChart(); renderCorChart(); renderCatList();
 
 let deferredPrompt;
 window.addEventListener('beforeinstallprompt', (e) => {
