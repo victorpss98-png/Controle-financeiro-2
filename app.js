@@ -28,15 +28,18 @@ function save(){
 }
 
 // Navegação
-document.getElementById("tab-fin").addEventListener("click",()=>showTab("fin"));
-document.getElementById("tab-cor").addEventListener("click",()=>showTab("cor"));
-document.getElementById("tab-cat").addEventListener("click",()=>showTab("cat"));
+document.getElementById("tab-fin").addEventListener("click",()=>showTab("fin","tab-fin"));
+document.getElementById("tab-cor").addEventListener("click",()=>showTab("cor","tab-cor"));
+document.getElementById("tab-cat").addEventListener("click",()=>showTab("cat","tab-cat"));
 
-function showTab(id){
+function showTab(secId, tabId){
+  // tirar destaque de todas as abas
   document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
-  document.getElementById("tab-"+id).classList.add("active");
+  // ativar apenas a aba clicada
+  document.getElementById(tabId).classList.add("active");
+  // mostrar apenas a seção correspondente
   ["fin","cor","cat"].forEach(sec=>{
-    document.getElementById(sec).style.display = (sec===id) ? "block" : "none";
+    document.getElementById(sec).style.display = (sec===secId) ? "block" : "none";
   });
 }
 
